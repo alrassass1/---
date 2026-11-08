@@ -280,6 +280,10 @@ class BluetoothAudioServiceClass {
     }
   }
 
+  public isRoutingRealHardware(): boolean {
+    return this.isSinkIdSupported() && this.selectedDeviceId !== 'default';
+  }
+
   /**
    * Play an authentic warm acoustic chime test tone on the selected audio device
    */
@@ -293,6 +297,9 @@ class BluetoothAudioServiceClass {
         }
 
         const ctx = new AudioCtx();
+        if ('setSinkId' in ctx && this.selectedDeviceId !== 'default') {
+          (ctx as any).setSinkId(this.selectedDeviceId).catch(() => {});
+        }
 
         // 3-note harmonic Yemeni Oud arpeggio (Rast - Bayati - High Rast)
         const notes = [
@@ -331,6 +338,7 @@ class BluetoothAudioServiceClass {
       }
     });
   }
+
 }
 
 export const BluetoothAudioService = new BluetoothAudioServiceClass();

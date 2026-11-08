@@ -88,6 +88,28 @@ export const RadioSectionView: React.FC<RadioSectionViewProps> = ({
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const liveAudioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const activeTracks = tracks.filter(t => t.enabled);
+  const currentTrack = activeTracks[currentIdx] || activeTracks[0] || null;
+
+  // High-Speed Track Preloader for Zero-Latency Next Track Transition
+  useEffect(() => {
+    if (activeTracks.length > 1) {
+      const nextIndex = isShuffled
+        ? Math.floor(Math.random() * activeTracks.length)
+        : (currentIdx + 1) % activeTracks.length;
+      const nextTrack = activeTracks[nextIndex];
+      if (nextTrack) {
+        OfflineAudioService.getPlayableUrl(nextTrack, nextIndex).then(url => {
+          if (preloadAudioRef.current && url) {
+            preloadAudioRef.current.src = url;
+            preloadAudioRef.current.preload = 'auto';
+          }
+        });
+      }
+    }
+  }, [currentIdx, isShuffled, activeTracks]);
 
   // Web Audio API Filter Nodes for Real Sound Enhancement
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -174,9 +196,6 @@ export const RadioSectionView: React.FC<RadioSectionViewProps> = ({
     setRadioTheme(newTheme);
     localStorage.setItem('dewan_radio_theme', newTheme);
   };
-
-  const activeTracks = tracks.filter(t => t.enabled);
-  const currentTrack = activeTracks[currentIdx] || activeTracks[0] || null;
 
   // Check initial radio tracks & live stream metadata from backend
   useEffect(() => {
@@ -378,14 +397,20 @@ export const RadioSectionView: React.FC<RadioSectionViewProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
-      {/* Hidden Audio Elements */}
+      {/* Hidden Audio Elements with High-Speed Auto Preloading */}
       <audio
         ref={audioRef}
         src={currentTrack?.audioUrl}
-        preload="metadata"
+        preload="auto"
         onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
         onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
         onEnded={handleTrackEnded}
+      />
+      <audio
+        ref={preloadAudioRef}
+        preload="auto"
+        className="hidden"
+        aria-hidden="true"
       />
       <audio
         ref={liveAudioRef}
@@ -762,12 +787,13 @@ export const RadioSectionView: React.FC<RadioSectionViewProps> = ({
                     key={t.id}
                     onClick={() => {
                       setCurrentIdx(idx);
-                      setTimeout(() => {
+                      OfflineAudioService.getPlayableUrl(t, idx).then(url => {
                         if (audioRef.current) {
+                          audioRef.current.src = url;
                           audioRef.current.currentTime = 0;
                           audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
                         }
-                      }, 50);
+                      });
                     }}
                     className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer ${
                       isCur

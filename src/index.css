@@ -5,9 +5,12 @@
     --color-cream: #FFFDF7;
     --color-cream-dark: #FFF7E8;
     --color-turquoise: #13B8A6;
+    --color-turquoise-dark: #0F766E;
     --color-skyblue: #42BDEB;
     --color-gold: #E8B957;
-    --color-royalblue: #2867A5;
+    --color-gold-deep: #D97706;
+    --color-royalblue: #0D65D9;
+    --color-royalblue-dark: #0A4BA8;
     --color-coral: #F28B82;
   }
 
@@ -16,6 +19,8 @@
     background-color: #FFFDF7;
     color: #1E293B;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -44,21 +49,27 @@
 
 /* Festive Gradients & Accents */
 .festive-gradient {
-  background: linear-gradient(135deg, #13B8A6 0%, #42BDEB 50%, #2867A5 100%);
+  background: linear-gradient(135deg, #13B8A6 0%, #42BDEB 50%, #0D65D9 100%);
 }
 
 .festive-banner-gradient {
-  background: linear-gradient(135deg, rgba(19, 184, 166, 0.95) 0%, rgba(66, 189, 235, 0.9) 60%, rgba(40, 103, 165, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.98) 0%, rgba(13, 101, 217, 0.92) 55%, rgba(10, 75, 168, 0.98) 100%);
 }
 
 .gold-gradient-text {
-  background: linear-gradient(135deg, #B48421 0%, #E8B957 50%, #D89823 100%);
+  background: linear-gradient(135deg, #B48421 0%, #F59E0B 50%, #D97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .turquoise-gradient-text {
   background: linear-gradient(135deg, #0F766E 0%, #13B8A6 50%, #42BDEB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.royal-gradient-text {
+  background: linear-gradient(135deg, #0A4BA8 0%, #0D65D9 50%, #38BDF8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

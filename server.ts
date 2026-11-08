@@ -72,8 +72,85 @@ function isSessionValid(req: express.Request): boolean {
 }
 
 app.use(express.json());
-// Serve public assets (audio, video, PWA manifest and icons) with HTTP range support
-app.use(express.static(path.resolve(__dirname, 'public')));
+// Serve public assets (audio, video, PWA manifest and icons) with HTTP range & high-speed media cache
+app.use(
+  express.static(path.resolve(__dirname, 'public'), {
+    maxAge: '7d',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.mp3') || filePath.endsWith('.mp4') || filePath.endsWith('.jpg') || filePath.endsWith('.png')) {
+        res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+      }
+    },
+  })
+);
+
+// Social Media Crawler OpenGraph Interceptor for WhatsApp, Telegram, Facebook, Twitter, and LinkedIn
+app.use((req, res, next) => {
+  const userAgent = (req.headers['user-agent'] || '').toLowerCase();
+  const isCrawler = /whatsapp|facebookexternalhit|telegrambot|twitterbot|linkedinbot|slackbot|discordbot|bingbot|googlebot/.test(
+    userAgent
+  );
+
+  // Only intercept page requests from social crawlers
+  if (isCrawler && req.method === 'GET' && !req.path.startsWith('/api') && !req.path.includes('.')) {
+    const db = readDB();
+    const queryV = req.query.v ? String(req.query.v).trim() : null;
+    let videoTitle = 'ديوان السعادة – نغم يجمعنا | منصة الطرب والتراث اليمني';
+    let videoDesc = 'المكتبة الرقمية الرسمية لقناة ديوان السعادة: جلسات طرب يمنية وخليجية حية، راديو متواصل 24 ساعة، وأرشيف التراث الفني الأصيل.';
+    let shareImg = 'https://ais-pre-bz2cc5fqifdb5dnsndy7vd-8035750185.europe-west2.run.app/og-share-banner.jpg';
+
+    if (queryV) {
+      const match = db.videos?.find((v: any) => v.youtubeId === queryV || v.id === queryV || v.id === `yt-${queryV}`);
+      if (match) {
+        videoTitle = `جلسة: ${match.title} – ${match.artist} | ديوان السعادة`;
+        videoDesc = `استمع وشاهد جلسة ${match.title} للفنان ${match.artist} من ألبوم ${match.album} بجودة استوديو فائقة وتنزيل MP3 وMP4.`;
+        if (match.thumbnail && match.thumbnail.startsWith('http')) {
+          shareImg = match.thumbnail;
+        }
+      }
+    }
+
+    const hostUrl = 'https://ais-pre-bz2cc5fqifdb5dnsndy7vd-8035750185.europe-west2.run.app';
+    const pageUrl = `${hostUrl}${req.originalUrl || '/'}`;
+
+    const crawlerHtml = `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>${videoTitle}</title>
+  <meta name="description" content="${videoDesc}" />
+  <meta property="og:type" content="music.song" />
+  <meta property="og:site_name" content="ديوان السعادة – نغم يجمعنا" />
+  <meta property="og:url" content="${pageUrl}" />
+  <meta property="og:title" content="${videoTitle}" />
+  <meta property="og:description" content="${videoDesc}" />
+  <meta property="og:image" content="${shareImg}" />
+  <meta property="og:image:secure_url" content="${shareImg}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:alt" content="${videoTitle}" />
+  <meta property="og:locale" content="ar_YE" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="${pageUrl}" />
+  <meta name="twitter:title" content="${videoTitle}" />
+  <meta name="twitter:description" content="${videoDesc}" />
+  <meta name="twitter:image" content="${shareImg}" />
+  <link rel="icon" type="image/jpeg" href="${hostUrl}/channel-logo.jpg" />
+</head>
+<body style="font-family: sans-serif; text-align: center; padding: 40px; direction: rtl; background: #0f172a; color: #fff;">
+  <img src="${shareImg}" alt="${videoTitle}" style="max-width: 600px; width: 100%; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" />
+  <h1 style="font-size: 24px; color: #fbbf24;">${videoTitle}</h1>
+  <p style="color: #cbd5e1; font-size: 16px; max-width: 600px; margin: 10px auto;">${videoDesc}</p>
+  <p style="margin-top: 30px;"><a href="${pageUrl}" style="color: #38bdf8; font-weight: bold; text-decoration: underline;">انقر هنا للدخول إلى المنصة والاستماع للجلسة</a></p>
+</body>
+</html>`;
+    return res.status(200).send(crawlerHtml);
+  }
+
+  next();
+});
+
 
 // Database file path
 const DATA_DIR = path.resolve(__dirname, 'data');

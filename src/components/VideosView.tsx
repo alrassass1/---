@@ -1,4 +1,19 @@
-import { ArrowUpDown, CheckCircle2, Clock, Filter, Grid, RefreshCw, Search, SlidersHorizontal, Tag, Video, X } from 'lucide-react';
+import {
+  ArrowUpDown,
+  CheckCircle2,
+  Clock,
+  Filter,
+  Grid,
+  LayoutGrid,
+  List,
+  Maximize2,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  Tv,
+  Video,
+  X,
+} from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { DataService } from '../services/dataService';
 import { Category, VideoItem } from '../types';
@@ -40,7 +55,16 @@ export const VideosView: React.FC<VideosViewProps> = ({
   const [selectedArtist, setSelectedArtist] = useState<string>(initialArtist || 'all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'alpha' | 'views' | 'downloads'>('newest');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const [viewMode, setViewMode] = useState<'standard' | 'large' | 'compact'>(() => {
+    return (localStorage.getItem('dewan_videos_view_mode') as any) || 'standard';
+  });
+
+  const handleViewModeChange = (mode: 'standard' | 'large' | 'compact') => {
+    setViewMode(mode);
+    localStorage.setItem('dewan_videos_view_mode', mode);
+  };
+
+  const itemsPerPage = viewMode === 'large' ? 8 : 12;
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -135,10 +159,10 @@ export const VideosView: React.FC<VideosViewProps> = ({
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-['Cairo'] flex items-center gap-3">
             <Video className="w-7 h-7 text-[#13B8A6]" />
-            <span>مكتبة فيديوهات ديوان السعادة</span>
+            <span>مكتبة فيديوهات وجلسات ديوان السعادة</span>
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            استعرض جميع جلسات الطرب والتسجيلات التراثية الموثقة بجودة صوت وصورة استثنائية ({filteredVideos.length} جلسة)
+            استعرض جميع جلسات الطرب والتسجيلات التراثية الموثقة بجودة استوديو 4K/HD وتنزيل فوري ({filteredVideos.length} جلسة)
           </p>
         </div>
 
@@ -152,7 +176,7 @@ export const VideosView: React.FC<VideosViewProps> = ({
           <button
             onClick={handleSyncVideos}
             disabled={isSyncing}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#13B8A6] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-teal-500/20 transition-all disabled:opacity-50 transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#13B8A6] hover:bg-[#0F766E] text-white text-xs font-bold shadow-md shadow-teal-500/20 transition-all disabled:opacity-50 transform hover:-translate-y-0.5 cursor-pointer"
             title="جلب أحدث فيديوهات القناة تلقائياً وتحديث الموقع والتطبيق فوراً"
           >
             <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -174,25 +198,71 @@ export const VideosView: React.FC<VideosViewProps> = ({
         </div>
       )}
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white border border-amber-100 p-4 rounded-2xl shadow-sm space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Filter & Search Bar + View Mode Toggle Toolbar */}
+      <div className="bg-white border border-amber-200/80 p-4 sm:p-5 rounded-3xl shadow-sm space-y-4">
+        {/* Top Controls Row: Search + View Mode Switcher */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative">
+          <div className="relative flex-1">
             <input
               type="text"
-              placeholder="ابحث بالعنوان أو الكلمات أو الفنان..."
+              placeholder="ابحث بالعنوان أو الكلمات أو الفنان أو المقام الموسيقي..."
               value={search}
               onChange={e => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl pr-9 pl-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-2xl pr-10 pl-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             />
-            <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3" />
+            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5" />
           </div>
 
-          {/* Category Dropdown (19 categories) */}
+          {/* View Mode Toggle: Cinematic Theater (Large) vs Standard Grid vs Compact */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl self-start lg:self-center border border-slate-200">
+            <button
+              onClick={() => handleViewModeChange('large')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                viewMode === 'large'
+                  ? 'bg-amber-400 text-slate-950 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+              title="عرض مكبّر سينمائي للفيديوهات مع مشاهدة مباشرة داخل القائمة"
+            >
+              <Tv className="w-4 h-4" />
+              <span>عرض مكبّر سينمائي</span>
+            </button>
+
+            <button
+              onClick={() => handleViewModeChange('standard')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                viewMode === 'standard'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+              title="عرض شبكي قياسي"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span>شبكة قياسية</span>
+            </button>
+
+            <button
+              onClick={() => handleViewModeChange('compact')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                viewMode === 'compact'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+              title="قائمة أفقية مدمجة"
+            >
+              <List className="w-4 h-4" />
+              <span>قائمة</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filters Row: Category, Artist, Sort */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-slate-100">
+          {/* Category Dropdown */}
           <div className="relative">
             <select
               value={selectedCategory}
@@ -200,16 +270,16 @@ export const VideosView: React.FC<VideosViewProps> = ({
                 setSelectedCategory(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-teal-500 appearance-none font-medium"
+              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-teal-500 appearance-none font-medium"
             >
-              <option value="all">جميع التصنيفات (19 تصنيف)</option>
+              <option value="all">جميع التصنيفات ({categories.length} تصنيف)</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.name}>
                   {cat.name}
                 </option>
               ))}
             </select>
-            <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
+            <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
           </div>
 
           {/* Artist Filter Dropdown */}
@@ -220,16 +290,16 @@ export const VideosView: React.FC<VideosViewProps> = ({
                 setSelectedArtist(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-teal-500 appearance-none font-medium"
+              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-teal-500 appearance-none font-medium"
             >
-              <option value="all">جميع الفنانين</option>
+              <option value="all">جميع الفنانين ({artistsList.length})</option>
               {artistsList.map(art => (
                 <option key={art} value={art}>
                   {art}
                 </option>
               ))}
             </select>
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
           </div>
 
           {/* Sort By Dropdown */}
@@ -237,7 +307,7 @@ export const VideosView: React.FC<VideosViewProps> = ({
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as any)}
-              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-teal-500 appearance-none font-medium"
+              className="w-full bg-[#FFFDF7] border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-teal-500 appearance-none font-medium"
             >
               <option value="newest">الترتيب: الأحدث تاريخاً</option>
               <option value="oldest">الترتيب: الأقدم</option>
@@ -245,18 +315,27 @@ export const VideosView: React.FC<VideosViewProps> = ({
               <option value="downloads">الترتيب: الأكثر تحميلاً</option>
               <option value="alpha">الترتيب: أبجدياً</option>
             </select>
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
           </div>
         </div>
       </div>
 
-      {/* Videos Grid */}
+      {/* Videos Layout Grid according to selected View Mode */}
       {paginatedVideos.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div
+          className={
+            viewMode === 'large'
+              ? 'grid grid-cols-1 lg:grid-cols-2 gap-8'
+              : viewMode === 'compact'
+              ? 'flex flex-col gap-3'
+              : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+          }
+        >
           {paginatedVideos.map(video => (
             <VideoCard
               key={video.id}
               video={video}
+              viewMode={viewMode}
               onWatch={onSelectVideo}
               onConvertMp3={onConvertMp3}
               onDownloadVideo={onDownloadVideo}
@@ -269,13 +348,13 @@ export const VideosView: React.FC<VideosViewProps> = ({
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white border border-amber-100 rounded-3xl p-8 shadow-sm">
+        <div className="text-center py-16 bg-white border border-amber-200 rounded-3xl p-8 shadow-sm">
           <Video className="w-12 h-12 text-slate-400 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-800 font-['Cairo']">لا توجد نتائج مطابقة لبحثك</h3>
           <p className="text-xs text-slate-500 mt-1">جرّب تغيير كلمات البحث أو إعادة ضبط خيارات الفرز والتصنيف.</p>
           <button
             onClick={resetFilters}
-            className="mt-4 px-4 py-2 bg-[#13B8A6] text-white text-xs font-bold rounded-xl hover:bg-[#0F766E]"
+            className="mt-4 px-5 py-2.5 bg-[#13B8A6] text-white text-xs font-bold rounded-xl hover:bg-[#0F766E] shadow-sm cursor-pointer"
           >
             عرض كافة الفيديوهات
           </button>
@@ -288,7 +367,7 @@ export const VideosView: React.FC<VideosViewProps> = ({
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50"
+            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
           >
             السابق
           </button>
@@ -298,7 +377,7 @@ export const VideosView: React.FC<VideosViewProps> = ({
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50"
+            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
           >
             التالي
           </button>
