@@ -94,9 +94,22 @@
     }
     </script>
   </head>
-  <body class="bg-[#FFFDF7] text-slate-800 antialiased selection:bg-[#13B8A6]/20 selection:text-teal-900">
+    <script>
+      // Gracefully suppress benign Vite HMR WebSocket notifications in sandboxed environments
+      window.addEventListener('error', function (event) {
+        if (event && event.message && event.message.includes('WebSocket')) {
+          event.stopImmediatePropagation();
+        }
+      });
+      window.addEventListener('unhandledrejection', function (event) {
+        if (event && event.reason && String(event.reason).includes('WebSocket')) {
+          event.stopImmediatePropagation();
+        }
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+
 
